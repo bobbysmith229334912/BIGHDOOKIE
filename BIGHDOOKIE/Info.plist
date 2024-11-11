@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIcons</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>BIGDOOKIE_icon_180x180</string>
+                <string>BIGDOOKIE_icon_167x167</string>
+                <string>BIGDOOKIE_icon_152x152</string>
+                <string>BIGDOOKIE_icon_120x120</string>
+                <string>BIGDOOKIE_icon_76x76</string>
+            </array>
+        </dict>
+    </dict>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
+    <key>CFBundleName</key>
+    <string>BIGHDOOKIE</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.hardcoreamaturellc.BIGDOOKIE.BIGHDOOKIE</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+
+    <!-- Purpose Strings for Privacy Permissions -->
+    <key>NSCameraUsageDescription</key>
+    <string>BIGDOOKIE needs access to your camera to take photos during gameplay.</string>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>BIGDOOKIE needs access to your microphone to record audio during gameplay.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>BIGDOOKIE needs access to your photo library to upload and share gameplay-related images.</string>
+
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>BIGDOOKIE needs access to your location for local multiplayer and GPS-related gameplay features.</string>
+
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>BIGDOOKIE requires constant access to your location to support background features.</string>
+
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>BIGDOOKIE needs Bluetooth access to connect to external devices for enhanced gameplay.</string>
+
+    <key>NSMotionUsageDescription</key>
+    <string>BIGDOOKIE uses motion sensors to track in-game movements.</string>
+
+    <key>NSContactsUsageDescription</key>
+    <string>BIGDOOKIE uses your contacts to invite friends to join gameplay.</string>
+
+    <key>NSFaceIDUsageDescription</key>
+    <string>BIGDOOKIE uses Face ID to authenticate users securely during login.</string>
+
+    <key>NSUserTrackingUsageDescription</key>
+    <string>BIGDOOKIE tracks your gameplay preferences to enhance your experience and show relevant ads.</string>
+
+    <key>NSUserNotificationUsageDescription</key>
+    <string>BIGDOOKIE needs permission to send you notifications for gameplay updates and reminders.</string>
+
+    <!-- Optional: If your app needs HealthKit data -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>BIGDOOKIE needs access to your health data for tracking fitness-related achievements in the game.</string>
+
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>BIGDOOKIE requires permission to update your health data to sync with gameplay achievements.</string>
+
+</dict>
+</plist>
