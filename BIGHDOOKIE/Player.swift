@@ -27,6 +27,7 @@ class Player: Identifiable {
         let bankroll = data["bankroll"] as? Double ?? 1000.0
         let handData = data["hand"] as? [[String: String]] ?? []
         let hand = handData.map { Card(rank: $0["rank"] ?? "", suit: $0["suit"] ?? "") }
-        self.init(name: name, bankroll: bankroll, hand: hand)
+        let id = data["id"] as? String ?? data["uid"] as? String ?? UUID().uuidString
+        self.init(id: id, name: name, bankroll: bankroll, hand: hand)
     }
 }
