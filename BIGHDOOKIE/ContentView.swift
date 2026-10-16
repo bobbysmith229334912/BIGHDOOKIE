@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseFunctions
+import WebKit
 
 
 struct ContentView: View {
@@ -21,6 +22,7 @@ struct ContentView: View {
     @State private var burnPhaseCompleted = false // Tracks if all players completed the burn phase
     @State private var cardOffset: CGFloat = 0 // Controls the horizontal offset of the hand
     @State private var gameOver = false // Tracks if the game has ended
+    @State private var showVideoTable = false // Opt-in camera call; never starts automatically
 
     let cardWidth: CGFloat = 80 // Width of each card
     let spacing: CGFloat = 10 // Spacing between cards
@@ -49,6 +51,12 @@ struct ContentView: View {
                 Text("Welcome to BIGDOOKIE")
                     .font(.largeTitle)
                     .padding()
+
+                Button { showVideoTable = true } label: {
+                    Label("Video Table (Beta)", systemImage: "video.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityHint("Open the optional video room to see other players")
 
                 Text("Your Hand")
                     .font(.headline)
@@ -187,6 +195,14 @@ struct ContentView: View {
             }
         }
         .padding()
+        .sheet(isPresented: $showVideoTable) {
+            NavigationStack {
+                VideoTableWebView(roomID: gameSession.sessionID ?? "unassigned")
+                    .navigationTitle("Live Video Table")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Close") { showVideoTable = false } } }
+            }
+        }
         .alert(isPresented: $showDialog) {
             if showBurnAction {
                 return Alert(
@@ -340,5 +356,29 @@ struct ContentView: View {
         } else if selectedBurnCards.count < maxBurnCards {
             selectedBurnCards.append(card)
         }
+    }
+}
+
+
+// Optional camera/video room prototype. This requires a working third-party video
+// service, device permission, network connectivity, and two participants joining
+// the same game session. Verify Jitsi hosting terms and device compatibility
+// before treating this as production multiplayer video.
+private struct VideoTableWebView: UIViewRepresentable {
+    let roomID: String
+
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.scrollView.isScrollEnabled = false
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        let safeID = roomID.replacingOccurrences(of: "[^A-Za-z0-9-]", with: "-", options: .regularExpression)
+        let room = "BIGHDOOKIE-" + safeID
+        guard let url = URL(string: "https://meet.jit.si/\(room)") else { return }
+        if webView.url != url { webView.load(URLRequest(url: url)) }
     }
 }
