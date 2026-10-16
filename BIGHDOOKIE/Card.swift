@@ -36,6 +36,11 @@ class Deck {
         shuffleDeck() // Shuffle the deck when it's initialized
     }
     
+    func resetDeck() {
+        cards = suits.flatMap { suit in ranks.map { rank in Card(rank: rank, suit: suit) } }
+        shuffleDeck()
+    }
+
     // Shuffle the deck
     func shuffleDeck() {
         cards.shuffle()

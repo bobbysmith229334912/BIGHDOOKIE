@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseFunctions
+import WebKit
 
 
 struct ContentView: View {
@@ -21,6 +22,7 @@ struct ContentView: View {
     @State private var burnPhaseCompleted = false // Tracks if all players completed the burn phase
     @State private var cardOffset: CGFloat = 0 // Controls the horizontal offset of the hand
     @State private var gameOver = false // Tracks if the game has ended
+    @State private var showVideoTable = false // Opt-in camera call; never starts automatically
 
     let cardWidth: CGFloat = 80 // Width of each card
     let spacing: CGFloat = 10 // Spacing between cards
@@ -50,6 +52,12 @@ struct ContentView: View {
                     .font(.largeTitle)
                     .padding()
 
+                Button { showVideoTable = true } label: {
+                    Label("Video Table (Beta)", systemImage: "video.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityHint("Open the optional video room to see other players")
+
                 Text("Your Hand")
                     .font(.headline)
                     .padding()
@@ -63,6 +71,8 @@ struct ContentView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: cardWidth, height: 120)
                                 .padding(3)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(selectedBurnCards.contains(where: { $0.id == card.id }) ? Color.yellow : Color.clear, lineWidth: 4))
+                                .onTapGesture { if !isBetPhase && !gameOver { toggleCardSelection(card) } }
                         }
                     }
                     .offset(x: cardOffset)
@@ -185,6 +195,14 @@ struct ContentView: View {
             }
         }
         .padding()
+        .sheet(isPresented: $showVideoTable) {
+            NavigationStack {
+                VideoTableWebView(roomID: gameSession.sessionID ?? "unassigned")
+                    .navigationTitle("Live Video Table")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Close") { showVideoTable = false } } }
+            }
+        }
         .alert(isPresented: $showDialog) {
             if showBurnAction {
                 return Alert(
@@ -219,7 +237,7 @@ struct ContentView: View {
     }
 
     func startGame() {
-        deck.shuffleDeck()
+        deck.resetDeck()
         playerHand = []
 
         for _ in 0..<4 {
@@ -235,6 +253,8 @@ struct ContentView: View {
         betPlaced = false
         playersTurnComplete = false
         isBetPhase = true
+        gameOver = false
+        currentPlayerTurn = 0
 
         db.collection("games").document(gameId).setData([
             "currentPlayerTurn": currentPlayerTurn,
@@ -245,6 +265,7 @@ struct ContentView: View {
     }
 
     func burnSelectedCards() {
+        guard !isBetPhase && !gameOver && selectedBurnCards.count <= maxBurnCards else { return }
         for card in selectedBurnCards {
             if let index = playerHand.firstIndex(where: { $0.id == card.id }), let newCard = deck.drawCard() {
                 playerHand[index] = newCard
@@ -264,7 +285,7 @@ struct ContentView: View {
     }
 
     func nextPlayerTurn() {
-        currentPlayerTurn = (currentPlayerTurn + 1) % numberOfPlayers
+        currentPlayerTurn = (currentPlayerTurn + 1) % max(1, numberOfPlayers)
 
         if currentPlayerTurn == 0 {
             playersTurnComplete = true
@@ -272,7 +293,9 @@ struct ContentView: View {
 
         if playersTurnComplete && isBetPhase {
             isBetPhase = false // Move to burn phase
+            playersTurnComplete = false
         } else if playersTurnComplete && !isBetPhase {
+            playersTurnComplete = false
             progressToNextDay() // Progress the day after the burn phase
         }
 
@@ -303,6 +326,10 @@ struct ContentView: View {
     func progressToNextDay() {
         if currentDay < 3 {
             currentDay += 1
+            isBetPhase = true
+            betPlaced = false
+            selectedBurnCards = []
+            isMadeHand = false
 
             switch currentDay {
             case 2:
@@ -323,10 +350,35 @@ struct ContentView: View {
     }
 
     func toggleCardSelection(_ card: Card) {
+        guard !isBetPhase && !gameOver else { return }
         if selectedBurnCards.contains(where: { $0.id == card.id }) {
             selectedBurnCards.removeAll { $0.id == card.id }
         } else if selectedBurnCards.count < maxBurnCards {
             selectedBurnCards.append(card)
         }
+    }
+}
+
+
+// Optional camera/video room prototype. This requires a working third-party video
+// service, device permission, network connectivity, and two participants joining
+// the same game session. Verify Jitsi hosting terms and device compatibility
+// before treating this as production multiplayer video.
+private struct VideoTableWebView: UIViewRepresentable {
+    let roomID: String
+
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.scrollView.isScrollEnabled = false
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        let safeID = roomID.replacingOccurrences(of: "[^A-Za-z0-9-]", with: "-", options: .regularExpression)
+        let room = "BIGHDOOKIE-" + safeID
+        guard let url = URL(string: "https://meet.jit.si/\(room)") else { return }
+        if webView.url != url { webView.load(URLRequest(url: url)) }
     }
 }
