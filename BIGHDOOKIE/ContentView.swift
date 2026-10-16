@@ -63,6 +63,8 @@ struct ContentView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: cardWidth, height: 120)
                                 .padding(3)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(selectedBurnCards.contains(where: { $0.id == card.id }) ? Color.yellow : Color.clear, lineWidth: 4))
+                                .onTapGesture { if !isBetPhase && !gameOver { toggleCardSelection(card) } }
                         }
                     }
                     .offset(x: cardOffset)
@@ -219,7 +221,7 @@ struct ContentView: View {
     }
 
     func startGame() {
-        deck.shuffleDeck()
+        deck.resetDeck()
         playerHand = []
 
         for _ in 0..<4 {
@@ -235,6 +237,8 @@ struct ContentView: View {
         betPlaced = false
         playersTurnComplete = false
         isBetPhase = true
+        gameOver = false
+        currentPlayerTurn = 0
 
         db.collection("games").document(gameId).setData([
             "currentPlayerTurn": currentPlayerTurn,
@@ -245,6 +249,7 @@ struct ContentView: View {
     }
 
     func burnSelectedCards() {
+        guard !isBetPhase && !gameOver && selectedBurnCards.count <= maxBurnCards else { return }
         for card in selectedBurnCards {
             if let index = playerHand.firstIndex(where: { $0.id == card.id }), let newCard = deck.drawCard() {
                 playerHand[index] = newCard
@@ -264,7 +269,7 @@ struct ContentView: View {
     }
 
     func nextPlayerTurn() {
-        currentPlayerTurn = (currentPlayerTurn + 1) % numberOfPlayers
+        currentPlayerTurn = (currentPlayerTurn + 1) % max(1, numberOfPlayers)
 
         if currentPlayerTurn == 0 {
             playersTurnComplete = true
@@ -272,7 +277,9 @@ struct ContentView: View {
 
         if playersTurnComplete && isBetPhase {
             isBetPhase = false // Move to burn phase
+            playersTurnComplete = false
         } else if playersTurnComplete && !isBetPhase {
+            playersTurnComplete = false
             progressToNextDay() // Progress the day after the burn phase
         }
 
@@ -303,6 +310,10 @@ struct ContentView: View {
     func progressToNextDay() {
         if currentDay < 3 {
             currentDay += 1
+            isBetPhase = true
+            betPlaced = false
+            selectedBurnCards = []
+            isMadeHand = false
 
             switch currentDay {
             case 2:
@@ -323,6 +334,7 @@ struct ContentView: View {
     }
 
     func toggleCardSelection(_ card: Card) {
+        guard !isBetPhase && !gameOver else { return }
         if selectedBurnCards.contains(where: { $0.id == card.id }) {
             selectedBurnCards.removeAll { $0.id == card.id }
         } else if selectedBurnCards.count < maxBurnCards {
